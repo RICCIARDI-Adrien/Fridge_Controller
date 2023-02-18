@@ -2,6 +2,7 @@
  * Entry point and main loop of the fridge controller firmware.
  * @author Adrien RICCIARDI
  */
+#include <ADC.h>
 #include <xc.h>
 
 //-------------------------------------------------------------------------------------------------
@@ -19,18 +20,38 @@ void main(void)
 	OSCCON = 0x41;
 	while (!OSCCONbits.HTS); // Wait for the clock to be stable, even if it already should be
 
-	// Disable comparator analog mode on all pins
-	CMCON0 = 0x07;
-	
-	ANSELbits.ANS0 = 0;
-	GPIO = 0;
-	TRISIO = 0x3E;
+	// Configure modules
+	ADCInitialize();
 
+	// Configure the pins now that all modules are initialized
+	CMCON0 = 0x07; // Disable the comparator analog mode on all pins as comparator is not used
+	// Configure GP0 and GP1 as analog inputs and other pins as digital
+	ANSEL &= 0xF0;
+	ANSEL |= 0x03;
+
+	// TEST
+	GPIObits.GP2 = 0;
+	GPIObits.GP5 = 0;
+	TRISIObits.TRISIO2 = 0;
+	TRISIObits.TRISIO5 = 0;
+
+	/*while (1)
+	{
+		GPIObits.GP2 = 1;
+		__delay_ms(1000);
+		GPIObits.GP2 = 0;
+		__delay_ms(1000);
+	}*/
+	
 	while (1)
 	{
-		GPIObits.GP0 = 1;
-		__delay_ms(1000);
-		GPIObits.GP0 = 0;
-		__delay_ms(1000);
+		unsigned short test;
+
+		test = ADCSampleFridgeTemperatureVoltage();
+		if (test > 255) GPIObits.GP2 = 1;
+		else GPIObits.GP2 = 0;
+		
+		//__delay_ms(1000);
+		GPIObits.GP5 = !GPIObits.GP5;
 	}
 }
