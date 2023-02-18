@@ -15,5 +15,22 @@
 //-------------------------------------------------------------------------------------------------
 void main(void)
 {
-	while (1);
+	// Clock the chip from the internal oscillator at 1MHz
+	OSCCON = 0x41;
+	while (!OSCCONbits.HTS); // Wait for the clock to be stable, even if it already should be
+
+	// Disable comparator analog mode on all pins
+	CMCON0 = 0x07;
+	
+	ANSELbits.ANS0 = 0;
+	GPIO = 0;
+	TRISIO = 0x3E;
+
+	while (1)
+	{
+		GPIObits.GP0 = 1;
+		__delay_ms(1000);
+		GPIObits.GP0 = 0;
+		__delay_ms(1000);
+	}
 }
