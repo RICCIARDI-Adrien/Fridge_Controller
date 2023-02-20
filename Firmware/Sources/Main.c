@@ -19,6 +19,13 @@
 /** The thermistor voltage divider R1 value in ohms. */
 #define MAIN_THERMISTOR_VOLTAGE_DIVIDER_FIXED_RESISTOR_OHMS 10000UL
 
+/** The GPIO pin that drives the power led. */
+#define MAIN_PIN_SET_POWER_LED(Value) GPIObits.GP2 = Value
+/** The GPIO pin that drives the compressor led. */
+#define MAIN_PIN_SET_COMPRESSOR_LED(Value) GPIObits.GP5 = Value
+/** The GPIO pin that drives the compressor relay. */
+#define MAIN_PIN_SET_COMPRESSOR_RELAY(Value) GPIObits.GP4 = Value
+
 //-------------------------------------------------------------------------------------------------
 // Private functions
 //-------------------------------------------------------------------------------------------------
@@ -58,22 +65,23 @@ void main(void)
 	// Configure GP0 and GP1 as analog inputs and other pins as digital
 	ANSEL &= 0xF0;
 	ANSEL |= 0x03;
+	// Make sure leds and relay will be off
+	MAIN_PIN_SET_POWER_LED(0);
+	MAIN_PIN_SET_COMPRESSOR_LED(0);
+	MAIN_PIN_SET_COMPRESSOR_RELAY(0);
+	// Configure leds and relay pins as output
+	TRISIO &= 0xCB;
 
-	// TEST
-	GPIObits.GP2 = 0;
-	GPIObits.GP5 = 0;
-	TRISIObits.TRISIO2 = 0;
-	TRISIObits.TRISIO5 = 0;
+	// Everything is initialized, turn on power led
+	MAIN_PIN_SET_POWER_LED(1);
 
-	/*while (1)
+	while (1)
 	{
-		GPIObits.GP2 = 1;
 		GPIObits.GP5 = 0;
 		__delay_ms(500);
-		GPIObits.GP2 = 0;
 		GPIObits.GP5 = 1;
 		__delay_ms(500);
-	}*/
+	}
 	
 	while (1)
 	{
