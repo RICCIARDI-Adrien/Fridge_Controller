@@ -19,6 +19,14 @@
 /** The thermistor voltage divider R1 value in ohms. */
 #define MAIN_THERMISTOR_VOLTAGE_DIVIDER_FIXED_RESISTOR_OHMS 10000UL
 
+/** How many samples to get to compute the average on. */
+#define MAIN_THERMISTOR_VOLTAGE_SAMPLES_COUNT 4 // Make sure the unsigned short value can't overflow with the sum of all samples when changing this value
+
+/** The resistance corresponding to the highest temperature threshold, when reached the compressor is started. */
+#define MAIN_THERMISTOR_THRESHOLD_HIGHEST_TEMPERATURE_RESISTANCE_OHMS 33160 // Stands for -19°C on the Brandt UD2321 freezer
+/** The resistance corresponding to the lowest temperature threshold, when reached the compressor is stopped. */
+#define MAIN_THERMISTOR_THRESHOLD_LOWEST_TEMPERATURE_RESISTANCE_OHMS 45000 // Stands for -26°C on the Brandt UD2321 freezer
+
 /** The GPIO pin that drives the power led. */
 #define MAIN_PIN_SET_POWER_LED(Value) GPIObits.GP2 = Value
 /** The GPIO pin that drives the compressor led. */
@@ -53,6 +61,10 @@ static inline unsigned long MainComputeThermistorResistance(unsigned short Sampl
 //-------------------------------------------------------------------------------------------------
 void main(void)
 {
+	unsigned short Thermistor_Voltage_Mean;
+	unsigned char i;
+	unsigned long Thermistor_Resistance;
+
 	// Clock the chip from the internal oscillator at 1MHz
 	OSCCON = 0x41;
 	while (!OSCCONbits.HTS); // Wait for the clock to be stable, even if it already should be
@@ -74,26 +86,40 @@ void main(void)
 
 	// Everything is initialized, turn on power led
 	MAIN_PIN_SET_POWER_LED(1);
-
-	while (1)
+	// Blink compressor led 3 times to tell that everything is OK
+	for (i = 0; i < 3; i++)
 	{
-		GPIObits.GP5 = 0;
-		__delay_ms(500);
-		GPIObits.GP5 = 1;
-		__delay_ms(500);
+		MAIN_PIN_SET_COMPRESSOR_LED(1);
+		__delay_ms(250);
+		MAIN_PIN_SET_COMPRESSOR_LED(0);
+		__delay_ms(250);
 	}
-	
+
+	// Main loop
 	while (1)
 	{
-		unsigned short test;
-		unsigned long test2;
+		// Get all samples with a little delay between each sample
+		Thermistor_Voltage_Mean = 0;
+		for (i = 0; i < MAIN_THERMISTOR_VOLTAGE_SAMPLES_COUNT; i++)
+		{
+			Thermistor_Voltage_Mean += ADCSampleFridgeTemperatureVoltage();
+			__delay_ms(1000);
+		}
+		// Compute the moving average
+		Thermistor_Voltage_Mean /= MAIN_THERMISTOR_VOLTAGE_SAMPLES_COUNT;
 
-		test = ADCSampleFridgeTemperatureVoltage();
-		test2 = MainComputeThermistorResistance(test);
-		if (test2 > 10000) GPIObits.GP2 = 1;
-		else GPIObits.GP2 = 0;
-
-		__delay_ms(200);
-		GPIObits.GP5 = !GPIObits.GP5;
+		// Use simple thresholds with hysteresis to drive the compressor
+		Thermistor_Resistance = MainComputeThermistorResistance(Thermistor_Voltage_Mean);
+		// The thermistor is a CTN on the UD2321, so resistance decreases when temperature increases
+		if (Thermistor_Resistance <= MAIN_THERMISTOR_THRESHOLD_HIGHEST_TEMPERATURE_RESISTANCE_OHMS)
+		{
+			MAIN_PIN_SET_COMPRESSOR_RELAY(1);
+			MAIN_PIN_SET_COMPRESSOR_LED(1);
+		}
+		else if (Thermistor_Resistance >= MAIN_THERMISTOR_THRESHOLD_LOWEST_TEMPERATURE_RESISTANCE_OHMS)
+		{
+			MAIN_PIN_SET_COMPRESSOR_RELAY(0);
+			MAIN_PIN_SET_COMPRESSOR_LED(0);
+		}
 	}
 }
