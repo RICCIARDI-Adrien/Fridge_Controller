@@ -12,7 +12,7 @@
 void ADCInitialize(void);
 
 /** Read the raw voltage (0 = 0V, 1023 = 4V) on the fridge thermistor.
- * @return The voltage value in range [0, 1023].
+ * @return The voltage value in range [0; 1023].
  */
 unsigned short ADCSampleFridgeTemperatureVoltage(void);
 
