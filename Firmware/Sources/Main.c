@@ -15,7 +15,7 @@
 // Private constants
 //-------------------------------------------------------------------------------------------------
 /** The thermistor voltage divider voltage in millivolts. */
-#define MAIN_THERMISTOR_VOLTAGE_DIVIDER_VOLTAGE_MILLIVOLTS 4000UL
+#define MAIN_THERMISTOR_VOLTAGE_DIVIDER_VOLTAGE_MILLIVOLTS 4096UL
 /** The thermistor voltage divider R1 value in ohms. */
 #define MAIN_THERMISTOR_VOLTAGE_DIVIDER_FIXED_RESISTOR_OHMS 10000UL
 
