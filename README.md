@@ -2,6 +2,18 @@
 
 A very simple controller with a light electronic BoM. It manages the fridge temperature with hardcoded thresholds and hysteresis.
 
+## Project information
+
+The board is powered by a PIC12F683 MCU. It samples the fridge or freezer temperature through a NTC sensor. It then controls the fridge cold unit through a 230V/12A relay.
+
+### Hardware
+
+The board schematic and PCB are designed with KiCad 6.
+
+### Firmware
+
+The microcontroller firmware is compiled with the free version of Microchip XC8 compiler.
+
 ## Photo gallery
 
 Naked PCB :
